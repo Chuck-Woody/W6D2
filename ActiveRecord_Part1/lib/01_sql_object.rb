@@ -6,6 +6,26 @@ require 'active_support/inflector'
 class SQLObject
   def self.columns
     # ...
+    return @columns if @columns
+  
+    @columns ||= []
+    if @columns.length == 0 
+      @columns = DBConnection.execute2(<<-SQL)
+      Select *
+      from
+      #{self.table_name};
+      SQL
+      
+    end
+ 
+   @columns = @columns.first
+    @columns.map! do |el|
+      el.to_sym
+
+   end
+   @columns
+
+
   end
 
   def self.finalize!
@@ -13,10 +33,12 @@ class SQLObject
 
   def self.table_name=(table_name)
     # ...
+    @table_name = table_name
   end
 
   def self.table_name
     # ...
+    @table_name || self.name.underscore.pluralize
   end
 
   def self.all
